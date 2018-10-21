@@ -2,7 +2,7 @@
 #
 # EOF (end-of-file) token is used to indicate that
 # there is no more input left for lexical analysis
-INTEGER, MUL, DIV, EOF = 'INTEGER', 'MUL', 'DIV', 'EOF'
+INTEGER, PLUS, MINUS, MUL, DIV, EOF = 'INTEGER', 'PLUS', 'MINUS', 'MUL', 'DIV', 'EOF'
 
 
 class Token(object):
@@ -74,6 +74,14 @@ class Lexer(object):
             if self.current_char.isdigit():
                 return Token(INTEGER, self.integer())
 
+            if self.current_char == '+':
+                self.advance()
+                return Token(PLUS, '+')
+
+            if self.current_char == '-':
+                self.advance()
+                return Token(MINUS, '-')
+
             if self.current_char == '*':
                 self.advance()
                 return Token(MUL, '*')
@@ -126,6 +134,29 @@ class Interpreter(object):
         while self.current_token.type in (MUL, DIV):
             token = self.current_token
             if token.type == MUL:
+                self.eat(MUL)
+                result = result * self.factor()
+            elif token.type == DIV:
+                self.eat(DIV)
+                result = result / self.factor()
+
+        return result
+
+    def cal(self):
+        """
+        cal    : factor ((PLUS | MINUS | MUL | DIV) factor)*
+        同时有加减法和乘除法时的结合问题
+        """
+        result = self.factor()
+        while self.current_token.type in (PLUS, MINUS, MUL, DIV):
+            token = self.current_token
+            if token.type == PLUS:
+                self.eat(token.type)
+                result = result + self.factor()
+            elif token.type == MINUS:
+                self.eat(token.type)
+                result = result - self.factor()
+            elif token.type == MUL:
                 self.eat(MUL)
                 result = result * self.factor()
             elif token.type == DIV:
