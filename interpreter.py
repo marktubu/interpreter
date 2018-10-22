@@ -47,6 +47,12 @@ class Lexer(object):
         else:
             self.current_char = self.text[self.pos]
 
+    def backward(self):
+        self.pos -= 1
+        if self.pos < 0:
+            self.pos = 0
+        self.current_char = self.text[self.pos]
+
     def skip_whitespace(self):
         while self.current_char is not None and self.current_char.isspace():
             self.advance()
@@ -145,24 +151,42 @@ class Interpreter(object):
     def cal(self):
         """
         cal    : factor ((PLUS | MINUS | MUL | DIV) factor)*
-        同时有加减法和乘除法时的结合问题
         """
         result = self.factor()
         while self.current_token.type in (PLUS, MINUS, MUL, DIV):
             token = self.current_token
             if token.type == PLUS:
                 self.eat(token.type)
-                result = result + self.factor()
+                current_result = self.factor()
+                token = self.current_token
+                while token.type in (MUL, DIV):
+                    self.eat(token.type)
+                    current_result2 = self.factor()
+                    if token.type == MUL:
+                        current_result = current_result * current_result2
+                    elif token.type == DIV:
+                        current_result = current_result / current_result2
+                    token = self.current_token
+                result = result + current_result
             elif token.type == MINUS:
                 self.eat(token.type)
-                result = result - self.factor()
+                current_result = self.factor()
+                token = self.current_token
+                while token.type in (MUL, DIV):
+                    self.eat(token.type)
+                    current_result2 = self.factor()
+                    if token.type == MUL:
+                        current_result = current_result * current_result2
+                    elif token.type == DIV:
+                        current_result = current_result / current_result2
+                    token = self.current_token
+                result = result - current_result
             elif token.type == MUL:
                 self.eat(MUL)
                 result = result * self.factor()
             elif token.type == DIV:
                 self.eat(DIV)
                 result = result / self.factor()
-
         return result
 
 
@@ -178,7 +202,7 @@ def main():
             continue
         lexer = Lexer(text)
         interpreter = Interpreter(lexer)
-        result = interpreter.expr()
+        result = interpreter.cal()
         print(result)
 
 
